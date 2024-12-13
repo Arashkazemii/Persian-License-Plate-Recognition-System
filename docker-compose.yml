@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_SECRET_KEY: "7a8c9b7d467e5b2f9f759ce502e5b6fa"
+      DB_USER: "irisaro"
+      DB_PASSWORD: "irisaro"
+      DB_DSN: "oracledb:1521/oltpsrc.YaranHeadOffice.Local"
+    depends_on:
+      - oracledb
+
+  oracledb:
+    image: gvenzl/oracle-xe:21-slim
+    environment:
+      ORACLE_PASSWORD: "irisaro"
+    ports:
+      - "1521:1521"
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'SELECT 1 FROM DUAL;' | sqlplus system/${ORACLE_PASSWORD}@localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5

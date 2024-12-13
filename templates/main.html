@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/main.css">
+    <title>License Plate Recognition System</title>
+</head>
+<body>
+    
+    <div id="loading-screen">
+        <div class="loader"></div>
+    </div>
+
+    <header class="header">
+        <div class="company-info">
+            <p class="company-name">CR: Arash Kazemi</p>
+        </div>
+        <div class="app-info">
+            <span class="app-version">v2.0</span>
+            <span class="app-name">License Plate Recognition System</span>
+        </div>
+        <nav>
+            <button onclick="window.location.href='/logout'">Logout</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="video-feed-container">
+            <h2>Camera</h2>
+            <hr><hr><br>
+            <div class="video-feed">
+                <img id="video-feed" src="/video_feed" alt="Live feed not available">
+            </div>
+            <br><br>
+        </div>
+
+        <div class="plate-output-container">
+            <h2>Plate</h2>
+            <hr><hr><br>
+            <form id="plate-form">
+                <label for="plate-output">plate:</label>
+                <input type="text" id="plate-output" name="plate_output" readonly>
+                <div class="button-group">
+                    <button type="button" id="approve-button">Approve</button>
+                    <button type="button" id="edit-button">Edit</button>
+                    <hr><hr>
+                </div>
+            </form>
+            <div id="search-result"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p><a href="mailto:kazemiarash09@gmail.com" target="_blank">Contact</a></p>
+    </footer>
+
+    <script src="../static/main.js"></script>
+</body>
+</html>
