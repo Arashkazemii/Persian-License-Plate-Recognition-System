@@ -1,0 +1,10 @@
+flask
+opencv-python
+torch
+pillow
+oracledb
+requests
+python-dotenv
+pandas
+ultralytics
+gitpython==3.1.30

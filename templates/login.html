@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/login.css">
+    <title>Login Page</title>
+</head>
+<body>
+    <hgroup>
+        <h1>Login</h1>
+        <h3>License Plate Recognition System</h3>
+    </hgroup>
+    <form action="/login" method="POST">
+        <!-- Username -->
+        <div class="group">
+            <input type="text" id="username" name="username" required>
+            <span class="highlight"></span>
+            <span class="bar"></span>
+            <label for="username">Username</label>
+        </div>
+
+        <!-- Password -->
+        <div class="group">
+            <input type="password" id="password" name="password" required>
+            <span class="highlight"></span>
+            <span class="bar"></span>
+            <label for="password">Password</label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="button buttonBlue">Login</button>
+
+        <!-- Error Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="error-messages">
+                    {% for category, message in messages %}
+                        <li class="error">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </form>
+    <footer>
+        <p>For report click <a href="mailto:kazemiarash09@gmail.com" target="_blank">here</a></p>
+    </footer>
+</body>
+</html>
