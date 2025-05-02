@@ -2,7 +2,7 @@ flask
 opencv-python
 torch
 pillow
-oracledb
+sqlite3
 requests
 python-dotenv
 pandas
