@@ -34,17 +34,13 @@ class ModelManager:
     def get_plate_detector(self):
         if self.plate_detector is None:
             print("Loading Plate Detector Model...")
-            self.plate_detector = torch.hub.load(
-                'ultralytics/yolov5', 'custom', path='models/best_detector.pt'
-            )
+            self.plate_detector = YOLO("./models/best detector.pt")
         return self.plate_detector
 
     def get_ocr_model(self):
         if self.ocr_model is None:
             print("Loading OCR Model...")
-            self.ocr_model = torch.hub.load(
-                'ultralytics/yolov5', 'custom', path='models/best_ocr.pt'
-            )
+            self.ocr_model = YOLO("./models/best ocr.pt")
         return self.ocr_model
 
 
