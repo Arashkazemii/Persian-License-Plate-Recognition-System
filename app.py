@@ -3,9 +3,10 @@ from functools import wraps
 import cv2
 import torch
 from PIL import Image
-import oracledb
+import sqlite3
 import os
 from dotenv import load_dotenv
+from ultralytics import YOLO
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -21,9 +22,7 @@ users = {
 
 # Database config
 DB_CONFIG = {
-    'user': os.getenv("DB_USER"),
-    'password': os.getenv("DB_PASSWORD"),
-    'dsn': os.getenv("DB_DSN", "oracledb:1521/oltpsrc")
+    'database': os.getenv("DB_PATH", "./database/plates.db")
 }
 
 # Load YOLO models
@@ -35,17 +34,13 @@ class ModelManager:
     def get_plate_detector(self):
         if self.plate_detector is None:
             print("Loading Plate Detector Model...")
-            self.plate_detector = torch.hub.load(
-                'ultralytics/yolov5', 'custom', path='models/best_detector.pt'
-            )
+            self.plate_detector = YOLO("./models/best detector.pt")
         return self.plate_detector
 
     def get_ocr_model(self):
         if self.ocr_model is None:
             print("Loading OCR Model...")
-            self.ocr_model = torch.hub.load(
-                'ultralytics/yolov5', 'custom', path='models/best_ocr.pt'
-            )
+            self.ocr_model = YOLO("./models/best ocr.pt")
         return self.ocr_model
 
 
@@ -56,7 +51,7 @@ plate_detector = model_manager.get_plate_detector()
 ocr_model = model_manager.get_ocr_model()
 
 # RTSP URL
-rtsp_url = "rtsp_url / video.mp4 / etc."
+rtsp_url = os.getenv("RTSP_URL", "0")
 
 # Character map for Persian license plates
 character_map = {
@@ -178,17 +173,17 @@ def search_database():
         return jsonify({'error': 'License plate is required.'}), 400
 
     try:
-        connection = oracledb.connect(**DB_CONFIG)
+        connection = sqlite3.connect(DB_CONFIG['database'])
         cursor = connection.cursor()
         query = """
         SELECT 
-            NAM_DRV_MTBIL, 
-            DES_FAMIL_DRV_MTBIL, 
-            COD_NATIONAL_DRV_MTBIL 
-        FROM IRISA.MTM_WAYBILLS 
-            WHERE COD_CAR_MTBIL = :plate
-                """
-        cursor.execute(query, plate=plate_output)
+            name,
+            name2, 
+            national_code
+        FROM plates 
+        WHERE plate = ?
+        """
+        cursor.execute(query, (plate_output,))
         result = cursor.fetchone()
 
         if result:
@@ -197,10 +192,9 @@ def search_database():
         else:
             return jsonify({'error': 'No results found for the given plate.'}), 404
 
-    except oracledb.DatabaseError as e:
-        error_obj, = e.args
-        print(f"Database error [{error_obj.code}]: {error_obj.message}")
-        return jsonify({'error': 'Database connection failed.'}), 500
+    except sqlite3.Error as e:
+        print(f"Database error: {str(e)}")
+        return jsonify({'error': 'Database error occurred.'}), 500
 
     finally:
         if 'cursor' in locals() and cursor:
