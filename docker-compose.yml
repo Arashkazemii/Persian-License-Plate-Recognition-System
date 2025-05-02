@@ -8,20 +8,10 @@ services:
       - "5000:5000"
     environment:
       FLASK_SECRET_KEY: ${SECRET_KEY:?Configure privately}
-      DB_USER: ${DB_USER:?Configure privately}
-      DB_PASSWORD: ${DB_PASSWORD:?Configure privately}
-      DB_DSN: ${DB_DSN:?Configure privately}
-    depends_on:
-      - oracledb
-
-  oracledb:
-    image: gvenzl/oracle-xe:21-slim
-    environment:
-      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Configure privately}
-    ports:
-      - "1521:1521"
-    healthcheck:
-      test: ["CMD-SHELL", "echo 'SELECT 1 FROM DUAL;' | sqlplus system/${ORACLE_PASSWORD}@localhost"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      DB_PATH: "/app/database/plates.db"
+      RTSP_URL: "0"
+    volumes:
+      - ./models:/app/models
+      - ./database:/app/database
+      - ./logs:/app/logs
+    restart: unless-stoppeds
