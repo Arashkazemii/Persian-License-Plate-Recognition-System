@@ -15,6 +15,12 @@ h2 {
   margin-bottom: 0.5rem;
 }
 
+h3 {
+  font-size: 1.4rem;
+  color: #444;
+  margin: 15px 0;
+}
+
 hr {
   border: 0;
   height: 1px;
@@ -94,67 +100,53 @@ nav button:hover {
   border: 2px solid #ddd;
 }
 
-/* Plate Output Styles */
-#plate-form {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Detection Log Styles */
+.detection-log {
+  margin-top: 20px;
 }
 
-#plate-form label {
-  font-size: 1rem;
-  margin-bottom: 5px;
+#latest-detection {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
 }
 
 #plate-output {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 10px 0;
   direction: rtl;
-  font-size: 1rem;
-  padding: 5px;
-  border: 2px solid #ddd;
-  border-radius: 5px;
-  width: 80%;
-  text-align: center;
-  margin-bottom: 10px;
 }
 
-.button-group {
+#detection-history {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+#detection-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#detection-list li {
+  padding: 10px;
+  border-bottom: 1px solid #e9ecef;
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  justify-content: space-between;
+  align-items: center;
+  direction: rtl;
 }
 
-button {
-  padding: 10px 15px;
-  font-size: 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-#approve-button {
-  background-color: #007BFF;
-  color: white;
-}
-
-#approve-button:hover {
-  background-color: #0056b3;
-}
-
-#edit-button {
-  background-color: #ff9800;
-  color: white;
-}
-
-#edit-button:hover {
-  background-color: #e68a00;
-}
-
-#search-result {
-  margin-top: 20px;
-  font-size: 1rem;
-  color: #666;
+#detection-list li:last-child {
+  border-bottom: none;
 }
 
 /* Loading screen styles */
@@ -171,6 +163,11 @@ button {
   z-index: 9999;
 }
 
+footer {
+  text-align: center;
+  padding: 20px;
+}
+
 footer a {
   text-decoration: none;
   color: #333;
@@ -184,7 +181,7 @@ footer a {
 
 footer a:hover {
   box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.459);
-  background-color: #c0c0c0
+  background-color: #c0c0c0;
 }
 
 /* Loader animation */
