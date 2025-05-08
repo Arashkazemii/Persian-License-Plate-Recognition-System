@@ -26,6 +26,39 @@
     </header>
 
     <main class="main-content">
+        <div class="input-methods">
+            <h2>Input Methods</h2>
+            <hr><hr><br>
+            <div class="input-tabs">
+                <button class="tab-button active" data-tab="rtsp">RTSP Stream</button>
+                <button class="tab-button" data-tab="image">Image Upload</button>
+                <button class="tab-button" data-tab="video">Video Upload</button>
+            </div>
+            
+            <div class="tab-content">
+                <div id="rtsp-tab" class="tab-pane active">
+                    <form id="rtsp-form" action="/set_rtsp" method="POST">
+                        <input type="text" name="rtsp_url" placeholder="Enter RTSP URL" required>
+                        <button type="submit">Start Stream</button>
+                    </form>
+                </div>
+                
+                <div id="image-tab" class="tab-pane">
+                    <form id="image-form" action="/upload_image" method="POST" enctype="multipart/form-data">
+                        <input type="file" name="image" accept="image/*" required>
+                        <button type="submit">Process Image</button>
+                    </form>
+                </div>
+                
+                <div id="video-tab" class="tab-pane">
+                    <form id="video-form" action="/upload_video" method="POST" enctype="multipart/form-data">
+                        <input type="file" name="video" accept="video/*" required>
+                        <button type="submit">Process Video</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div class="video-feed-container">
             <h2>Camera</h2>
             <hr><hr><br>
