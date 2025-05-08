@@ -1,82 +1,52 @@
 document.addEventListener("DOMContentLoaded", () => {
     const plateOutputField = document.getElementById("plate-output");
-    const approveButton = document.getElementById("approve-button");
-    const editButton = document.getElementById("edit-button");
-    const searchResultDiv = document.getElementById("search-result");
+    const detectionList = document.getElementById("detection-list");
+    const MAX_DISPLAY_ITEMS = 10; // Maximum number of detections to display
+    let detectionHistory = [];
 
-    // Allow editing the detected license plate
-    editButton.addEventListener("click", () => {
-        plateOutputField.removeAttribute("readonly");
-        plateOutputField.focus();
-    });
-
-    // Approve and search the license plate
-    approveButton.addEventListener("click", () => {
-        const plateValue = plateOutputField.value.trim();
-        if (!plateValue) {
-            alert("License plate field is empty.");
-            return;
+    // Function to update the latest detection
+    function updateLatestDetection(plate) {
+        if (plate && plate !== "Invalid Plate") {
+            plateOutputField.textContent = plate;
+            
+            // Add to detection history
+            const timestamp = new Date().toLocaleTimeString();
+            detectionHistory.unshift({ plate, timestamp });
+            
+            // Keep only the last MAX_DISPLAY_ITEMS
+            if (detectionHistory.length > MAX_DISPLAY_ITEMS) {
+                detectionHistory.pop();
+            }
+            
+            // Update the detection list
+            updateDetectionList();
         }
-    
-        // Show a loading message
-        searchResultDiv.innerHTML = `<p class="loading">Searching...</p>`;
-    
-        // Search for license plate details in the database
-        fetch("/search", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ plate_output: plateValue }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    searchResultDiv.innerHTML = `<p class="error">${data.error}</p>`;
-                } else {
-                    searchResultDiv.innerHTML = `
-                        <p><strong>نام:</strong> ${data.name}</p>
-                        <p><strong>نام خانوادگی:</strong> ${data.name2}</p>
-                        <p><strong>کد ملی:</strong> ${data.national_code}</p>
-                    `;
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching search result:", error);
-                searchResultDiv.innerHTML = `<p class="error">An error occurred. Please try again.</p>`;
-            });
-    });
-
-    // Example: Simulate a license plate detection update (to be replaced with live updates)
-    function updatePlateOutput(plate) {
-        plateOutputField.value = plate;
-        plateOutputField.setAttribute("readonly", "true");
     }
 
-    // Simulated example; replace with real-time detection logic
-    setInterval(() => {
-        updatePlateOutput("REDP"); // Example detected plate
-    }, 20000); // Updates every 5 seconds
-});
+    // Function to update the detection list
+    function updateDetectionList() {
+        detectionList.innerHTML = detectionHistory.map(item => 
+            `<li>${item.plate} - ${item.timestamp}</li>`
+        ).join('');
+    }
 
+    // Function to fetch the latest plate
+    function fetchLatestPlate() {
+        fetch("/get_latest_plate")
+            .then(response => response.json())
+            .then(data => {
+                if (data.formatted_plate) {
+                    updateLatestDetection(data.formatted_plate);
+                }
+            })
+            .catch(error => console.error("Error fetching latest plate:", error));
+    }
+
+    // Fetch latest plate every 5 seconds
+    setInterval(fetchLatestPlate, 5000);
+});
 
 window.onload = function() {
     // Hide the loading screen after the page loads
     document.getElementById('loading-screen').style.display = 'none';
-  };  
-
-  function fetchLatestPlate() {
-    fetch("/get_latest_plate")
-        .then(response => response.json())
-        .then(data => {
-            const plateOutputField = document.getElementById("plate-output");
-            if (data.formatted_plate && data.formatted_plate !== "Invalid Plate") {
-                plateOutputField.value = data.formatted_plate;
-                plateOutputField.setAttribute("readonly", "true"); // فیلد فقط خواندنی شود
-            }
-        })
-        .catch(error => console.error("Error fetching latest plate:", error));
-}
-
-
-setInterval(fetchLatestPlate, 5000);
+};
