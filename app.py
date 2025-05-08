@@ -9,12 +9,18 @@ from dotenv import load_dotenv
 from ultralytics import YOLO
 import re
 from datetime import datetime, timedelta
+import tempfile
+import shutil
 
 # Load environment variables from a .env file
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "7a8c9b7d467e5b2f9f759ce502e5b6fa")  # Replace with a secure secret key
+
+# Create upload directory if it doesn't exist
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Sample credentials
 users = {
@@ -25,6 +31,12 @@ users = {
 # Database config
 DB_CONFIG = {
     'database': os.getenv("DB_PATH", "./database/plates.db")
+}
+
+# Global variables for video source
+current_source = {
+    'type': 'rtsp',  # 'rtsp', 'image', or 'video'
+    'path': os.getenv("RTSP_URL", "0")
 }
 
 # Load YOLO models
@@ -50,9 +62,6 @@ model_manager = ModelManager()
 
 plate_detector = model_manager.get_plate_detector()
 ocr_model = model_manager.get_ocr_model()
-
-# RTSP URL
-rtsp_url = os.getenv("RTSP_URL", "0")
 
 # Character map for Persian license plates
 charmap = {
@@ -93,14 +102,77 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+# Set RTSP URL route
+@app.route("/set_rtsp", methods=["POST"])
+@login_required
+def set_rtsp():
+    global current_source
+    rtsp_url = request.form.get('rtsp_url')
+    if rtsp_url:
+        current_source = {
+            'type': 'rtsp',
+            'path': rtsp_url
+        }
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "No RTSP URL provided"}), 400
+
+# Upload image route
+@app.route("/upload_image", methods=["POST"])
+@login_required
+def upload_image():
+    global current_source
+    if 'image' not in request.files:
+        return jsonify({"status": "error", "message": "No image file provided"}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+    
+    if file:
+        # Save the uploaded file
+        filename = os.path.join(UPLOAD_FOLDER, 'current_image.jpg')
+        file.save(filename)
+        
+        current_source = {
+            'type': 'image',
+            'path': filename
+        }
+        return jsonify({"status": "success"})
+    
+    return jsonify({"status": "error", "message": "Invalid file"}), 400
+
+# Upload video route
+@app.route("/upload_video", methods=["POST"])
+@login_required
+def upload_video():
+    global current_source
+    if 'video' not in request.files:
+        return jsonify({"status": "error", "message": "No video file provided"}), 400
+    
+    file = request.files['video']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+    
+    if file:
+        # Save the uploaded file
+        filename = os.path.join(UPLOAD_FOLDER, 'current_video.mp4')
+        file.save(filename)
+        
+        current_source = {
+            'type': 'video',
+            'path': filename
+        }
+        return jsonify({"status": "success"})
+    
+    return jsonify({"status": "error", "message": "Invalid file"}), 400
+
 # Video feed generation
 def generate_video_feed():
     global latest_plate
-    video_path = os.getenv("VIDEO_PATH", "./video/template-01.mp4")
-    cap = cv2.VideoCapture(video_path)
+    cap = cv2.VideoCapture(current_source['path'])
     
     if not cap.isOpened():
-        print(f"Error: Unable to open video file at {video_path}")
+        print(f"Error: Unable to open video source at {current_source['path']}")
         yield b""
         return
 
@@ -108,8 +180,12 @@ def generate_video_feed():
         try:
             ret, frame = cap.read()
             if not ret:
-                print("End of video stream.")
-                break
+                if current_source['type'] == 'image':
+                    # For image, keep showing the same frame
+                    frame = cv2.imread(current_source['path'])
+                else:
+                    print("End of video stream.")
+                    break
             
             # Process the frame for detection
             image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
