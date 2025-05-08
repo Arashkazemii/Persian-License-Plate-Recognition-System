@@ -3,42 +3,13 @@ import sqlite3
 def create_database():
     conn = sqlite3.connect('./database/plates.db')
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS plates (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, name2 TEXT, national_code TEXT, plate TEXT)''')
-    conn.commit()
-    conn.close()
-
-def insert_sample_data():
-    conn = sqlite3.connect('./database/plates.db')
-    c = conn.cursor()
-    
-    sample_data = [
-        ('12ایران345ب67', 'علی', 'محمدی', '0012345678'),
-        ('34ایران567ج89', 'رضا', 'احمدی', '0023456789'), 
-        ('56ایران789د12', 'محمد', 'حسینی', '0034567890'),
-        ('78ایران901ه34', 'حسین', 'رضایی', '0045678901'),
-        ('90ایران123و56', 'مریم', 'کریمی', '0056789012'),
-        ('11ایران234ی78', 'فاطمه', 'موسوی', '0067890123'),
-        ('22ایران345ت90', 'زهرا', 'هاشمی', '0078901234'),
-        ('33ایران456ن12', 'سارا', 'صادقی', '0089012345'),
-        ('44ایران567م34', 'نرگس', 'علوی', '0090123456'),
-        ('55ایران678ل56', 'امیر', 'نوری', '0012345679'),
-        ('66ایران789ک78', 'حسن', 'فرهادی', '0023456780'),
-        ('77ایران890ق90', 'جواد', 'سعیدی', '0034567891'),
-        ('88ایران901ف12', 'مجید', 'عباسی', '0045678902'),
-        ('99ایران012س34', 'سعید', 'میرزایی', '0056789013'),
-        ('10ایران234ش56', 'بهرام', 'جعفری', '0067890124'),
-        ('20ایران345ص78', 'کاظم', 'طاهری', '0078901235'),
-        ('30ایران456ط90', 'اکبر', 'رحیمی', '0089012346'),
-        ('40ایران567ظ12', 'اصغر', 'کاظمی', '0090123457'),
-        ('50ایران678ع34', 'مهدی', 'حیدری', '0012345670'),
-        ('60ایران789غ56', 'رسول', 'قاسمی', '0023456781')
-    ]
-    
-    c.executemany('''INSERT INTO plates (plate, name, name2, national_code) VALUES (?, ?, ?, ?)''', sample_data)
+    c.execute('''CREATE TABLE IF NOT EXISTS plates (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+              name TEXT, 
+              name2 TEXT, 
+              plate TEXT, 
+              time_detected TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     conn.commit()
     conn.close()
 
 if __name__ == "__main__":
     create_database()
-    insert_sample_data()
-
