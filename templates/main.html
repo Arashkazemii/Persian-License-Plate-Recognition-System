@@ -36,18 +36,18 @@
         </div>
 
         <div class="plate-output-container">
-            <h2>Plate</h2>
+            <h2>Detection Log</h2>
             <hr><hr><br>
-            <form id="plate-form">
-                <label for="plate-output">plate:</label>
-                <input type="text" id="plate-output" name="plate_output" readonly>
-                <div class="button-group">
-                    <button type="button" id="approve-button">Approve</button>
-                    <button type="button" id="edit-button">Edit</button>
-                    <hr><hr>
+            <div class="detection-log">
+                <div id="latest-detection">
+                    <h3>Latest Detection:</h3>
+                    <p id="plate-output">No plate detected yet</p>
                 </div>
-            </form>
-            <div id="search-result"></div>
+                <div id="detection-history">
+                    <h3>Recent Detections:</h3>
+                    <ul id="detection-list"></ul>
+                </div>
+            </div>
         </div>
     </main>
 
