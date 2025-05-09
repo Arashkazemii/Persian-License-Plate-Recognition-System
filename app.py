@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 from ultralytics import YOLO
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import tempfile
 import shutil
 
@@ -37,6 +37,12 @@ DB_CONFIG = {
 current_source = {
     'type': 'rtsp',  # 'rtsp', 'image', or 'video'
     'path': os.getenv("RTSP_URL", "0")
+}
+
+# In-memory cooldown tracker
+last_inserted = {
+    'plate': None,
+    'time': datetime.min.replace(tzinfo=timezone.utc)
 }
 
 # Load YOLO models
@@ -190,8 +196,8 @@ def generate_video_feed():
             # Process the frame for detection
             image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             detection_results = plate_detector(image)
-            
-            if detection_results is not None and len(detection_results) > 0:
+
+            if detection_results and len(detection_results) > 0:
                 for detection_result in detection_results:
                     x1, y1, x2, y2 = detection_result.boxes.xyxy[0].tolist()
                     x1, y1, x2, y2 = map(int, [x1, y1, x2, y2])
@@ -216,41 +222,48 @@ def generate_video_feed():
                             formatted_text = re.sub(
                                 r"(\d{2})(\D)(\d{3})(\d{2})", r"\1 \2 \3 \4", result_string
                             )
-                            
-                            # Check if plate was detected in last 5 minutes
-                            try:
-                                conn = sqlite3.connect(DB_CONFIG['database'])
-                                cursor = conn.cursor()
-                                
-                                # Check for recent detection
-                                five_minutes_ago = datetime.now() - timedelta(minutes=5)
-                                cursor.execute("""
-                                    SELECT COUNT(*) FROM plates 
-                                    WHERE plate = ? AND time_detected > ?
-                                """, (formatted_text, five_minutes_ago))
-                                
-                                count = cursor.fetchone()[0]
-                                
-                                if count == 0:
-                                    # Insert new detection
-                                    cursor.execute("""
-                                        INSERT INTO plates (plate, time_detected) 
-                                        VALUES (?, datetime('now'))
-                                    """, (formatted_text,))
-                                    conn.commit()
-                                    
-                                    # Draw on frame
-                                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                                    cv2.putText(frame, formatted_text, (x1, y1 - 10), 
-                                              cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-                                    latest_plate = formatted_text
-                                    
-                            except sqlite3.Error as e:
-                                print(f"Database error: {e}")
-                            finally:
-                                if conn:
-                                    conn.close()
 
+                            now_utc = datetime.now(timezone.utc)
+                            five_minutes_ago = now_utc - timedelta(minutes=5)
+
+                            # Avoid flooding inserts by memory check
+                            if (formatted_text != last_inserted['plate'] or 
+                                (now_utc - last_inserted['time']).total_seconds() > 10):
+
+                                try:
+                                    conn = sqlite3.connect(DB_CONFIG['database'])
+                                    cursor = conn.cursor()
+
+                                    cursor.execute("""
+                                        SELECT COUNT(*) FROM plates 
+                                        WHERE plate = ? AND time_detected > ?
+                                    """, (formatted_text, five_minutes_ago.isoformat()))
+                                    
+                                    count = cursor.fetchone()[0]
+
+                                    if count == 0:
+                                        cursor.execute("""
+                                            INSERT INTO plates (plate, time_detected)
+                                            VALUES (?, ?)
+                                        """, (formatted_text, now_utc.isoformat()))
+                                        conn.commit()
+
+                                        # Visual feedback
+                                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                                        cv2.putText(frame, formatted_text, (x1, y1 - 10),
+                                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
+                                        latest_plate = formatted_text
+                                        last_inserted['plate'] = formatted_text
+                                        last_inserted['time'] = now_utc
+
+                                except sqlite3.Error as e:
+                                    print(f"Database error: {e}")
+                                finally:
+                                    if conn:
+                                        conn.close()
+
+            # Encode and stream
             _, buffer = cv2.imencode('.jpg', frame)
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
