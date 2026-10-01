@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-dev.txt
+            requirements-web.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+      - run: python -m compileall -q app.py database tests
+      - name: Reject tracked runtime files
+        shell: bash
+        run: |
+          if git ls-files | grep -Ei '(^|/)(\.env($|\.)|[^/]+\.(db|sqlite|sqlite3)($|-)|uploads/)|\.(pt|pth|ckpt|onnx|safetensors)$' | grep -vE '(^|/)\.env\.example$'; then
+            echo 'Runtime data, private environment files, and checkpoints must not be tracked.'
+            exit 1
+          fi
