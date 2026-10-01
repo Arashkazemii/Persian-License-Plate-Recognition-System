@@ -1,2 +1,34 @@
-*.pyc
+*.py[cod]
 __pycache__/
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+.pytest_cache/
+.coverage
+.cache/
+htmlcov/
+uploads/
+logs/
+*.db
+*.db-*
+*.sqlite*
+# Checkpoints are quarantined locally until provenance permits redistribution.
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+.DS_Store
+Thumbs.db
+
+# Local editor/agent configuration and generated indexes
+.codex/
+.claude/
+.serena/
+.repowise/
+.vscode/
+.mcp.json
+.ripwire*
+AGENTS.md

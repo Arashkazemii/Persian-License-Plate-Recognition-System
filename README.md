@@ -1,225 +1,156 @@
-# License Plate Recognition and Persian OCR Application
+# Persian License Plate Recognition System
 
-## Overview
+A small Flask application that detects Persian license plates and reads their
+characters using two local Ultralytics YOLO11 checkpoints. It accepts a camera
+source, an uploaded image, or an uploaded video, streams annotated frames to the
+browser, and stores recognized plates in SQLite with a five-minute duplicate window.
 
-This repository showcases a robust **License Plate Recognition** and **OCR (Optical Character Recognition)** system tailored for Persian license plates. The project combines advanced deep learning techniques and a user-friendly web interface to detect and recognize license plates captured from security checkpoints or scale cameras.
+This is an experimental application. The repository does not contain a published
+evaluation dataset, reproducible training pipeline, or verified accuracy/latency
+benchmarks. Both configured accounts have the same access; role-based authorization
+is not implemented. The detection list in the browser is session-local, not a database viewer.
 
----
+## Licensing and model provenance
 
-## Features
+The application source, documentation, and original UI assets are licensed under
+[AGPL-3.0-only](LICENSE), consistent with the open-source Ultralytics dependency.
+The old requirement to obtain permission before reusing the application source is removed.
+Third-party dependencies retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-- **License Plate Detection:**
-  - Utilizes a custom-trained YOLOv5 model for accurate plate detection.
-  - Tested on a diverse dataset for robust performance.
-  - Real-time detection capabilities.
-  - Supports multiple input sources (RTSP, video files, images).
+**Model checkpoints are not distributed in the rewritten Git history.**
+Their training data, upstream weights, and redistribution rights still need maintainer
+confirmation. [models/README.md](models/README.md) records the evidence and outstanding
+questions. Do not describe the complete model bundle as cleared for OSS distribution
+until these questions are resolved. No training data is supplied. The source-code
+license does not independently relicense privately supplied weights.
 
-- **Persian License Plate OCR:**
-  - Custom-trained OCR model specifically for Persian characters and numbers.
-  - Handles Persian character mapping to ensure correct outputs.
-  - Supports both standard and special format Persian plates.
-  - Real-time character recognition with high accuracy.
+## Setup
 
-- **Web Application:**
-  - Built using Flask, providing an intuitive interface for users.
-  - Includes login/logout functionality with role-based access.
-  - Real-time video stream processing with frame-by-frame analysis.
-  - Secure user authentication system.
-  - Support for multiple input sources (RTSP, video upload, image upload).
+Use Python 3.11 and Git. Docker is an alternative, not a prerequisite for a local run.
+Inference requires two trusted, locally supplied files named `models/best detector.pt`
+and `models/best ocr.pt`. They are intentionally absent from Git and ignored to
+prevent accidental redistribution. No cleared public download is provided yet.
+The maintainer's existing local copies are preserved; a fresh clone can run the
+mocked web tests without weights, but cannot perform recognition until authorized
+checkpoints are provided.
 
-- **Database Integration:**
-  - SQLite database for storing detected license plates.
-  - Efficient querying and data retrieval.
-  - Automatic duplicate detection within 5-minute window.
-  - Timestamp tracking for each detection.
-
-- **Dockerized Environment:**
-  - Simplifies deployment with Docker and Docker Compose.
-  - Consistent environment across different platforms.
-  - Easy setup and configuration.
-  - Isolated dependencies and services.
-
----
-
-## Project Structure
-
-```
-.
-├── models/                    # Trained ML models
-│   ├── best detector.pt      # Trained plate detection model
-│   └── best ocr.pt          # Trained OCR model
-├── database/                 # Database related files
-│   ├── plates.db            # SQLite database file
-│   └── database.py          # Database utilities
-├── static/                   # Static assets
-│   ├── css/                 # Stylesheets
-│   │   ├── login.css        # Login page styles
-│   │   └── main.css         # Main page styles
-│   └── js/                  # JavaScript files
-│       └── main.js          # Client-side functionality
-├── templates/               # HTML templates
-│   ├── login.html          # Login page template
-│   └── main.html           # Main page template
-├── uploads/                # Temporary storage for uploaded files
-├── images/                 # Project images and screenshots
-├── .env                    # Environment variables (not included)
-├── app.py                  # Flask application
-├── docker-compose.yml      # Docker Compose configuration
-├── Dockerfile             # Docker container setup
-├── requirements.txt       # Python dependencies
-└── .gitignore            # Git ignore file
+```bash
+git clone https://github.com/Arashkazemii/Persian-License-Plate-Recognition-System.git
+cd Persian-License-Plate-Recognition-System
+python -m venv .venv
 ```
 
----
+Activate the environment with `source .venv/bin/activate` on Linux/macOS, or
+`.\.venv\Scripts\Activate.ps1` in Windows PowerShell.
 
-## Dependencies
+For a CPU installation on supported platforms, install PyTorch first:
 
-The project requires the following main dependencies:
-- Flask (Web framework)
-- OpenCV (Image processing)
-- PyTorch (Deep learning)
-- Pillow (Image handling)
-- SQLite3 (Database)
-- Ultralytics (YOLOv5 implementation)
-- Python-dotenv (Environment variables)
-- Pandas (Data manipulation)
-- GitPython (Version control integration)
+```bash
+python -m pip install --upgrade pip setuptools==84.0.0
+python -m pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements.txt
+```
 
----
+If those CPU wheels are unavailable on your platform, follow the
+[official PyTorch installation instructions](https://pytorch.org/get-started/locally/)
+for the pinned versions. CUDA installations need a matching PyTorch/torchvision pair.
+Pins cover direct dependencies; transitive dependencies are not a full lockfile.
+The checkpoints report Ultralytics 8.3.55; the pinned runtime is newer, so validate
+outputs on your own representative inputs before relying on it operationally.
 
-## How It Works
+Copy `.env.example` to `.env` (`cp .env.example .env`, or `Copy-Item .env.example .env`
+in PowerShell). Fill in `SECRET_KEY`, `USER_1_USERNAME`, and `USER_1_PASSWORD` with
+fresh values. There are no default accounts or session keys. Generate a session key:
 
-### Workflow:
-1. **License Plate Detection:**
-   - Input images or video streams are processed using the YOLOv5 plate detection model.
-   - Detected license plate regions are cropped for OCR.
-   - Real-time processing with optimized performance.
-   - Supports multiple input sources (RTSP, video files, images).
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
 
-2. **OCR for Persian Plates:**
-   - The OCR model recognizes Persian characters and numbers from the cropped images.
-   - Outputs are formatted based on Persian license plate structure.
-   - Special handling for different plate formats.
-   - Real-time character recognition with high accuracy.
+The second account is optional. Keep `.env` private; never paste it into an issue.
+`RTSP_URL=0` selects the first local camera. Alternatively, configure an authorized
+`rtsp://` or `rtsps://` camera URL. `RTSP_ALLOWED_HOSTS` can restrict destination
+hostnames/IPs. Leave `SESSION_COOKIE_SECURE=false` for local HTTP; enable it behind HTTPS.
 
-3. **Database Integration:**
-   - Recognized license plate numbers are stored in SQLite database.
-   - Duplicate detection within 5-minute window.
-   - Timestamp tracking for each detection.
-   - Efficient querying and data retrieval.
+```bash
+python app.py
+```
 
-### Character Mapping:
-The OCR system incorporates a mapping layer to convert model outputs into Persian characters and digits accurately, supporting:
-- Standard Persian characters (ث, ت, پ, د, ط, ه‍, etc.)
-- Persian numbers (۰-۹)
-- Special characters used in license plates
-- Special format plates (e.g., معلولین و جانبازان)
+Visit <http://127.0.0.1:5000> and sign in. The app uses Waitress with one process and
+four threads, creates a missing database automatically, and loads weights on the
+first inference request. Only load trusted `.pt` files: PyTorch checkpoints can
+contain executable serialized objects.
 
----
+## Docker
 
-## Installation and Setup
+Configure `.env` and supply the two authorized model files locally first, then:
 
-### Prerequisites:
-- Python 3.8+
-- Docker and Docker Compose
-- Git
+```bash
+docker compose up --build
+```
 
-### Steps:
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Arashkazemii/License-Plate-Recognition-and-Persian-OCR-Application.git
-   cd License-Plate-Recognition-and-Persian-OCR-Application
-   ```
+The service is bound to `127.0.0.1:5000`, runs as a non-root user, reads the model
+directory as read-only, and stores detections in the `plate-data` named volume.
+Secrets, local databases, uploads, and agent indexes are excluded from the build
+context, including checkpoint binaries. The private read-only model bind mount
+supplies inference weights at runtime. Do not distribute those files or an image
+containing them until their rights are cleared. Do not run
+`docker compose down --volumes` unless you intend to discard detections.
+An RTSP camera is the easiest container input; `0` does not expose a host webcam
+inside Docker without platform-specific device configuration.
 
-2. **Set up environment variables:**
-   - Create a `.env` file based on the following template:
-     ```env
-     SECRET_KEY=
-     USER_1_USERNAME=
-     USER_1_PASSWORD=
-     USER_2_USERNAME=
-     USER_2_PASSWORD=
-     RTSP_URL=0
-     ```
+## Usage and limitations
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+- Use the input tabs to select a camera, image, or video. Requests changing state
+  require the CSRF token supplied by the page. Logout is a POST request.
+- Uploaded images are validated and limited to 20 megapixels. Videos accept
+  `.mp4`, `.avi`, `.mov`, `.mkv`, `.webm`, and `.m4v`; codec support depends on OpenCV.
+  Request bodies are limited to 100 MB by default (`MAX_UPLOAD_MB`).
+- Source selection, models, latest plate, and upload filenames are shared within
+  one process. This is a trusted-operator tool, not a multi-tenant service. Do not
+  run multiple worker processes or assume accounts isolate detections.
+- The existing first-box selection, OCR left-to-right ordering, 31-class mapping,
+  eight-character acceptance rule, and YOLO inference defaults are retained.
+  The special multi-character class label needs evaluation against actual data;
+  changing it requires a model/format decision.
+- No login rate limiting or account-management system is provided. Remote use
+  needs HTTPS, network controls, and rate limiting. Allowed camera hostnames are
+  not a substitute for network egress controls or protection against DNS rebinding.
+- Plate data and camera media may be sensitive. Use authorized sources and set
+  an appropriate retention policy. The old database has been removed from tracking;
+  the local rewritten history removes it, credentials, identity samples, and model
+  binaries. GitHub and other copies remain unchanged until coordinated remote cleanup.
 
-4. **Run the application:**
-   ```bash
-   python app.py
-   ```
+## Structure
 
-5. **Docker Setup (Recommended):**
-   - Build and run using Docker Compose:
-     ```bash
-     docker-compose up --build
-     ```
+```text
+app.py                 Flask routes, frame processing, lazy model loading
+database/database.py   SQLite initialization (database generated locally)
+models/                Provenance notes; privately supplied ignored checkpoints
+templates/             Login and main page
+static/                CSS and browser JavaScript
+images/                Historical UI screenshots
+tests/                 Web, database, and stream regression tests
+.github/               CI and issue/PR templates
+```
 
----
+## Development
 
-## Usage
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
 
-1. **Access the Application:**
-   - Visit `http://localhost:5000` in your web browser.
+Tests use temporary storage and mock inference, so they do not need camera access,
+download weights, or measure model accuracy. CI is configured for Python 3.11
+and 3.12. See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and
+[CHANGELOG.md](CHANGELOG.md). No versioned release is asserted by the UI or changelog.
 
-2. **Login:**
-   - Use the credentials defined in the `.env` file to log in.
-   - Different user roles available (admin, security).
+After installing the full runtime, run `python tests/smoke_models.py` for an optional
+CPU check of both checkpoints and a synthetic video upload/stream. It uses temporary
+storage and synthetic credentials, leaves the weights unchanged, and is not an accuracy benchmark.
 
-3. **Input Sources:**
-   - RTSP Stream: Enter RTSP URL for live camera feed.
-   - Video Upload: Upload video files for processing.
-   - Image Upload: Upload single images for processing.
+Historical screenshots: [login](images/login-page.png) and [main page](images/main-page.png).
+They show the earlier interface, not proof of recognition quality.
 
-4. **Real-time Processing:**
-   - The application processes the input source in real-time.
-   - Displays detected license plates with OCR results.
-   - Shows bounding boxes and recognized text.
-
-5. **Database Features:**
-   - Automatic storage of detected plates.
-   - Duplicate detection within 5-minute window.
-   - Timestamp tracking for each detection.
-
----
-
-## Screenshots
-
-### Login Page:
-![alt text](images/login-page.png)
-
-### Main Interface:
-![alt text](images/main-page.png)
-
----
-
-## Limitations
-- The models are optimized for Persian license plates only.
-- Real-time performance depends on hardware capabilities.
-- Video stream quality affects detection accuracy.
-- Processing speed may vary based on input source type.
-
----
-
-## Security Features
-- Secure user authentication with role-based access
-- Environment variable protection
-- Database security with SQLite
-- Input validation and sanitization
-- Session management
-- Secure file upload handling
-
----
-
-## Disclaimer
-The models, code, and assets in this repository are provided **for demonstration purposes only**. Any use outside of viewing this repository requires explicit written permission from the author.
-
----
-
-## Contact
-For inquiries or collaborations, feel free to contact me:
-- **Email:** kazemiarash09@gmail.com
-- **GitHub:** [GitHub profile](https://github.com/Arashkazemii)
+For remote deployments, set `SOURCE_URL` to the complete corresponding source of
+the version you actually run; the UI links to it and the license. No warranty is provided.

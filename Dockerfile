@@ -1,32 +1,32 @@
 # Base image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-web.txt ./
+RUN pip install --no-cache-dir --upgrade pip setuptools==84.0.0 \
+    && pip install --no-cache-dir torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Create necessary directories
-RUN mkdir -p models database logs
+RUN mkdir -p models database uploads
 
 # Copy application files
 COPY . .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
+ENV HOST=0.0.0.0
+ENV DB_PATH=/app/database/plates.db
+ENV YOLO_CONFIG_DIR=/tmp/ultralytics
 
 # Run as non-root user for security
 RUN useradd -m appuser

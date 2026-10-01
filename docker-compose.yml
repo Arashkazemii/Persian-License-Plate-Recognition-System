@@ -1,17 +1,17 @@
-version: "3.9"
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
+    # Bind to loopback; use a configured HTTPS proxy for remote access.
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000"
+    env_file:
+      - .env
     environment:
-      FLASK_SECRET_KEY: ${SECRET_KEY:?Configure privately}
-      DB_PATH: "/app/database/plates.db"
-      RTSP_URL: "0"
+      DB_PATH: /app/database/plates.db
     volumes:
-      - ./models:/app/models
-      - ./database:/app/database
-      - ./logs:/app/logs
-    restart: unless-stoppeds
+      - ./models:/app/models:ro
+      - plate-data:/app/database
+    restart: unless-stopped
+
+volumes:
+  plate-data:
