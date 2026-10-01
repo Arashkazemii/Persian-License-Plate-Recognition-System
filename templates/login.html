@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/login.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
     <title>Login Page</title>
 </head>
 <body>
@@ -12,6 +12,7 @@
         <h3>License Plate Recognition System</h3>
     </hgroup>
     <form action="/login" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <!-- Username -->
         <div class="group">
             <input type="text" id="username" name="username" required>
@@ -43,6 +44,8 @@
         {% endwith %}
     </form>
     <footer>
+        <p>Copyright 2024-2026 Arash Kazemi. No warranty.
+            <a href="/license">AGPL-3.0</a> · <a href="{{ source_url }}">Source code</a></p>
         <p>For report click <a href="mailto:kazemiarash09@gmail.com" target="_blank">here</a></p>
     </footer>
 </body>

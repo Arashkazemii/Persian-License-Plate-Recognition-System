@@ -1,8 +1,24 @@
+// Copyright (C) 2024-2026 Arash Kazemi
+// SPDX-License-Identifier: AGPL-3.0-only
 document.addEventListener("DOMContentLoaded", () => {
     const plateOutputField = document.getElementById("plate-output");
     const detectionList = document.getElementById("detection-list");
     const MAX_DISPLAY_ITEMS = 10; // Maximum number of detections to display
     let detectionHistory = [];
+    let lastDisplayedPlate = null;
+
+    async function handleSourceResponse(response) {
+        if (response.redirected) {
+            window.location.href = '/login';
+            return;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            window.alert(data.message || 'Request failed. Reload the page and check your input.');
+            return;
+        }
+        document.getElementById('video-feed').src = '/video_feed?' + new Date().getTime();
+    }
 
     // Tab switching functionality
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -34,10 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 body: formData
             });
-            if (response.ok) {
-                // Refresh video feed
-                document.getElementById('video-feed').src = '/video_feed?' + new Date().getTime();
-            }
+            await handleSourceResponse(response);
         } catch (error) {
             console.error('Error setting RTSP URL:', error);
         }
@@ -51,10 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 body: formData
             });
-            if (response.ok) {
-                // Refresh video feed
-                document.getElementById('video-feed').src = '/video_feed?' + new Date().getTime();
-            }
+            await handleSourceResponse(response);
         } catch (error) {
             console.error('Error uploading image:', error);
         }
@@ -68,10 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 body: formData
             });
-            if (response.ok) {
-                // Refresh video feed
-                document.getElementById('video-feed').src = '/video_feed?' + new Date().getTime();
-            }
+            await handleSourceResponse(response);
         } catch (error) {
             console.error('Error uploading video:', error);
         }
@@ -79,7 +86,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to update the latest detection
     function updateLatestDetection(plate) {
-        if (plate && plate !== "Invalid Plate") {
+        if (plate && plate !== "Invalid Plate" && plate !== lastDisplayedPlate) {
+            lastDisplayedPlate = plate;
             plateOutputField.textContent = plate;
             
             // Add to detection history
@@ -98,9 +106,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to update the detection list
     function updateDetectionList() {
-        detectionList.innerHTML = detectionHistory.map(item => 
-            `<li>${item.plate} - ${item.timestamp}</li>`
-        ).join('');
+        detectionList.replaceChildren(...detectionHistory.map(item => {
+            const row = document.createElement('li');
+            row.textContent = `${item.plate} - ${item.timestamp}`;
+            return row;
+        }));
     }
 
     // Function to fetch the latest plate

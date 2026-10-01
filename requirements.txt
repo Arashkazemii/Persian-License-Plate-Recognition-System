@@ -1,10 +1,8 @@
-flask
-opencv-python
-torch
-pillow
-sqlite3
-requests
-python-dotenv
-pandas
-ultralytics
-gitpython==3.1.30
+# Direct runtime dependencies. CPU-only PyTorch installation is documented in README.
+-r requirements-web.txt
+opencv-python==4.12.0.88
+torch==2.14.1
+torchvision==0.29.1
+ultralytics==8.4.170
+# Avoid the outdated packaging tool offered by the CPU wheel index.
+setuptools==84.0.0
